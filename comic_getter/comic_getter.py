@@ -9,7 +9,6 @@ import time
 from config_generator import ConfigJSON
 from RCO_links import RCO_Comic
 
-single = 'https://readcomiconline.to/Comic/Aquaman-2011/Annual-2?id=35607'
 # Create terminal UI
 parser = argparse.ArgumentParser(
     prog="comic_getter",
