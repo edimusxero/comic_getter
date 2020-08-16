@@ -25,7 +25,7 @@ class RCO_Comic:
         '''Initializes main_link attribute. '''
         # Seed link that contains all the links of the different issues.
         self.main_link = args[0]
-        
+
         try:
             self.zip_these = args[1]
         except:
@@ -43,11 +43,15 @@ class RCO_Comic:
             chrome_options = Options()
             chrome_options.add_argument("--headless")
             chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument("--log-level=3")
+            chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
             self.options = chrome_options
         else:
             chrome_options = Options()
             chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--window-size=1,1')
+            chrome_options.add_argument('--window-size=800,600')
+            chrome_options.add_argument("--log-level=3")
+            chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
             self.options = chrome_options
 
     def get_issues_links(self):
@@ -120,7 +124,7 @@ class RCO_Comic:
         '''Finds out comic and issue name from link.'''
 
         # Re module is used to get issue and comic name.
-        name_and_issue = re.search(r"(?<=[cC]omic/)(.+?)/(.+?)(?=\?)", issue_link)
+        name_and_issue = re.search(r"(?<=[cC]omic/)(.+?)/(.+?)(?=\?|$)", issue_link)
 
         # comic_issue_names[0] is the comic's link name, comic_issue_names[1]
         # is the comic name and comic_issue_names[2] is the issues name.
@@ -139,21 +143,26 @@ class RCO_Comic:
             return False
 
     def clean_title_name(self, issue_name, issue_number):
-        clean_title = re.sub(r'-', r' ', issue_name).strip()   
-        issue_match = re.match(r"^(\bIssue\b|\bAnnual\b)-([0-9-].*)$", issue_number.strip())
-        issue_type = issue_match.group(1)
-        number = issue_match.group(2)
-        number = re.sub(r'-', r'.', number)
-
-        if (float(number) < 10):
-            number = '#00' + number
-        elif (float(number) >= 10) and (float(number) < 100):
-            number = '#0' + number
+        clean_title = re.sub(r'-', r' ', issue_name).strip()
+        if(issue_number == 'Full'):
+            number = '#001'
         else:
-            number = '#' + number
+            issue_match = re.match(r"^(\bIssue\b|\bAnnual\b|\bTPB\b)-([0-9-].*)$", issue_number.strip())
+            issue_type = issue_match.group(1)
+            number = issue_match.group(2)
+            number = re.sub(r'-', r'.', number)
 
-        if issue_type == 'Annual':
-            number = (f"Annual {number}")
+            if (float(number) < 10):
+                number = '#00' + number
+            elif (float(number) >= 10) and (float(number) < 100):
+                number = '#0' + number
+            else:
+                number = '#' + number
+
+            if issue_type == 'Annual':
+                number = (f"Annual {number}")
+            elif issue_type == 'TPB':
+                number = (f"TPB {number}")
 
         return(clean_title, number)
 
@@ -181,8 +190,8 @@ class RCO_Comic:
                     file.write(page.content)
                 pbar.update(1)
 
-        print(f"Finished downloading {full_name}", flush=True)
-        
+        print(f"\nFinished downloading {full_name}", flush=True)
+
         try:
             if(self.zip_these):
                 self.create_zip(download_path, root_path, full_name)

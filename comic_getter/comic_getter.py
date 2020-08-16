@@ -24,7 +24,7 @@ parser.add_argument('-x', "--single",  nargs=1, dest="single",
 parser.add_argument('-s', "--skip", nargs=1, type=int, default=[""],
                     dest="skip", help='Number of issues to skip.')
 parser.add_argument('-r', '--rng', type=str, required=False, dest="range",
-                        help='Issue range <1-10>')
+                        help='Issue range <1-10> or <1,4,6,8,12> (for list of issues).  Annual or TPB can also be used as range value to grab all of the corresponding issues <Annual>')
 parser.add_argument('-z', '--zip', dest="create_zip", action='store_true',
                         help='Create Zip File From Downloaded Issue')
 
@@ -39,13 +39,49 @@ if not ConfigJSON().config_exists():
 
 # Download comic from link.
 if args.input:
-    comic = RCO_Comic(args.input[0])
+    if(args.create_zip):
+        comic = RCO_Comic(args.input[0], args.create_zip)
+    else:
+        comic = RCO_Comic(args.input[0])
+
     issues_links = list(comic.get_issues_links())
     issues_links.reverse()
 
     # Ignore determined links.
     if args.skip[0]:
         issues_links = issues_links[args.skip[0]:]
+    
+    if args.range:
+        new_list = []
+
+        def check_if_exists(x, ls):
+            for text in ls:
+                if x in text:
+                    new_list.append(text)
+                   
+        if args.range == 'Annual':
+            check_if_exists(args.range, issues_links)
+            issues_links = new_list
+            
+        elif args.range == 'TPB':
+            check_if_exists(args.range, issues_links)
+            issues_links = new_list
+
+        else:
+            if '-' in args.range:
+                issue_range = args.range.split('-')
+                start = int(issue_range[0])
+                stop = int(issue_range[1]) + 1
+                series_range = range(start, stop)
+                
+            elif ',' in args.range:
+                series_range = args.range.split(',')
+                
+            for dl_range in series_range:
+                issue_range = (f'/Issue-{dl_range}?')
+                check_if_exists(issue_range, issues_links)
+
+            issues_links = new_list
 
     # Delete already downloaded issues links
     issues_identifiers = [comic.get_comic_and_issue_name(
